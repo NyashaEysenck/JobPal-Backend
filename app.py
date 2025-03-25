@@ -437,9 +437,8 @@ def career_guidance():
         return jsonify({"error": "Error parsing career guidance."})
 
 if __name__ == '__main__':
+    app.run(host="0.0.0.0",     port=int(os.environ.get("PORT", 8080)), debug=False)
     # Start the cleanup scheduler
     cleanup_cv_files()
     
-    # Run with production server (not Flask's built-in)
-    from waitress import serve
-    serve(app, host="0.0.0.0", port=8080)
+    
