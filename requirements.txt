@@ -4,3 +4,4 @@ fpdf==1.7.2
 protobuf==6.30.1
 python-dotenv==1.1.0
 reportlab==4.2.5
+google-generativeai
