@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # Enable CORS for all domains (or specify the frontend URL)
 # Alternatively, you can specify which origins are allowed:
-CORS(app, origins=["http://localhost:8080"], supports_credentials=True)
+CORS(app)
 
 # Configure Gemini API
   # Replace with your actual API key
@@ -437,4 +437,9 @@ def career_guidance():
         return jsonify({"error": "Error parsing career guidance."})
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    # Start the cleanup scheduler
+    cleanup_cv_files()
+    
+    # Run with production server (not Flask's built-in)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
