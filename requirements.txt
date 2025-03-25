@@ -6,3 +6,4 @@ python-dotenv
 reportlab
 google-generativeai
 waitress
+gunicorn
