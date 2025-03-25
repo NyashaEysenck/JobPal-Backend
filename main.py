@@ -437,4 +437,4 @@ def career_guidance():
         return jsonify({"error": "Error parsing career guidance."})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
