@@ -338,6 +338,13 @@ cleanup_cv_files()
 @app.route('/interview-questions', methods=['POST'])
 @cross_origin
 def get_interview_questions():
+    response = jsonify({"message": "Hello, CORS is enabled!"})
+    
+    # Explicitly set the CORS header
+    response.headers.add("Access-Control-Allow-Origin", "*")  # Allow all origins (replace * with a specific domain in production)
+    
+    return response
+
     data = request.json
     role = data.get('role', '').strip()
 
