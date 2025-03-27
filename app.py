@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file ,jsonify
 import google.generativeai as genai
 import json
 from reportlab.lib.pagesizes import letter
@@ -7,68 +7,21 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os, re
 from io import StringIO
-from flask_cors import CORS
+
+from flask_cors import CORS  # Import CORS
 
 # Load environment variables from the .env file
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-# List of allowed origins (add more if needed)
-allowed_origins = [
-    "https://jobpal-frontend-production.up.railway.app",
-    "http://localhost:3000"  # For local development
-]
 
-# Configure CORS for all endpoints
-CORS(app, resources={
-    r"/get_recommendations": {
-        "origins": allowed_origins,
-        "methods": ["POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/generate-cv": {
-        "origins": allowed_origins,
-        "methods": ["POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/download-cv/<filename>": {
-        "origins": allowed_origins,
-        "methods": ["GET", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/interview-questions": {
-        "origins": allowed_origins,
-        "methods": ["POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/career_guidance": {
-        "origins": allowed_origins,
-        "methods": ["POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    },
-    r"/health": {
-        "origins": allowed_origins,
-        "methods": ["GET", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+ 
 
-# Explicit OPTIONS handlers for all endpoints
-@app.route('/get_recommendations', methods=['OPTIONS'])
-@app.route('/generate-cv', methods=['OPTIONS'])
-@app.route('/download-cv/<filename>', methods=['OPTIONS'])
-@app.route('/interview-questions', methods=['OPTIONS'])
-@app.route('/career_guidance', methods=['OPTIONS'])
-@app.route('/health', methods=['OPTIONS'])
-def handle_options():
-    response = jsonify({'message': 'Preflight request accepted'})
-    response.headers.add('Access-Control-Allow-Origin', ', '.join(allowed_origins))
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    return response
-
+# Configure Gemini API
+  # Replace with your actual API key
 genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+
 # Function to interact with Gemini API
 def get_gemini_response(prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
