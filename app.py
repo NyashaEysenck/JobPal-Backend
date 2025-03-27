@@ -340,7 +340,7 @@ def get_interview_questions():
     if request.method == 'OPTIONS':
         # Respond to preflight
         response = jsonify()
-        response.headers.add("Access-Control-Allow-Origin", "http://yourfrontend.com")
+        response.headers.add("Access-Control-Allow-Origin", "https://jobpal-frontend-production.up.railway.app")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
         response.headers.add("Access-Control-Allow-Credentials", "true")  # If using cookies
