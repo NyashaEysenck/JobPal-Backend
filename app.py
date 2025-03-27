@@ -26,19 +26,6 @@ app = Flask(__name__)
 # Alternatively, you can specify which origins are allowed:
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.after_request
-def after_request(response):
-    # Allow requests from specific origin
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    
-    # Allow specific methods (GET, POST, OPTIONS, etc.)
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    
-    # Allow specific headers (e.g., Content-Type, Authorization)
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    
-    # Allow cookies (if needed)
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
 
 # Configure Gemini API
   # Replace with your actual API key
@@ -337,12 +324,15 @@ cleanup_cv_files()
 
 @app.route('/interview-questions', methods=['POST', 'OPTIONS'])
 def get_interview_questions():
+    print("Entered")
     if request.method == 'OPTIONS':
         # Handle preflight request
-        response = jsonify()
+        response = jsonify({'status': 'preflight accepted'})
         response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
+        return response, 200  # Explicit HTTP 200 status
+
     
     data = request.json
     role = data.get('role', '').strip()
