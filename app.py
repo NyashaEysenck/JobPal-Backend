@@ -335,15 +335,17 @@ def health_check():
 cleanup_cv_files()
 
 
-@app.route('/interview-questions', methods=['POST'])
-@cross_origin
+@app.route('/interview-questions', methods=['POST', 'OPTIONS'])
 def get_interview_questions():
-    response = jsonify({"message": "Hello, CORS is enabled!"})
+    if request.method == 'OPTIONS':
+        # Respond to preflight
+        response = jsonify()
+        response.headers.add("Access-Control-Allow-Origin", "http://yourfrontend.com")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Credentials", "true")  # If using cookies
+        return response
     
-    # Explicitly set the CORS header
-    response.headers.add("Access-Control-Allow-Origin", "*")  # Allow all origins (replace * with a specific domain in production)
-    
-    return response
 
     data = request.json
     role = data.get('role', '').strip()
