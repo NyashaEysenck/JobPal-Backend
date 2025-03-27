@@ -18,7 +18,8 @@ app = Flask(__name__)
 
 # Enable CORS for all domains (or specify the frontend URL)
 # Alternatively, you can specify which origins are allowed:
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 
 # Configure Gemini API
   # Replace with your actual API key
