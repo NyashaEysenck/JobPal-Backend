@@ -337,7 +337,7 @@ cleanup_cv_files()
 
 @app.route('/interview-questions', methods=['POST', 'OPTIONS'])
 def get_interview_questions():
- 
+    print("This is a test")
     data = request.json
     role = data.get('role', '').strip()
 
@@ -450,7 +450,7 @@ def career_guidance():
         return jsonify({"error": "Error parsing career guidance."})
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0",     port=int(os.environ.get("PORT", 8080)), debug=False)
+    app.run(host="0.0.0.0",     port=int(os.environ.get("PORT", 5000)), debug=False)
     # Start the cleanup scheduler
     cleanup_cv_files()
     
