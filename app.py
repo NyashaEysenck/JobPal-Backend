@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file ,jsonify
+from flask import Flask, render_template, request, send_file, jsonify
 import google.generativeai as genai
 import json
 from reportlab.lib.pagesizes import letter
@@ -7,8 +7,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os, re
 from io import StringIO
-
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -16,28 +15,48 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 
-
-
-# Configure CORS
-CORS(app, resources={
-    r"/get_recommendations": {"origins": "*"},
-    r"/generate-cv": {"origins": "*"},
-    r"/download-cv/*": {"origins": "*"},
-    r"/interview-questions": {"origins": "*"},
-    r"/career_guidance": {"origins": "*"},
-    r"/health": {"origins": "*"}
+# Configure CORS with explicit settings for JSON content
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+        "expose_headers": ["Content-Type"],
+        "supports_credentials": True,
+        "max_age": 86400
+    }
 })
 
 # Add CORS headers to all responses
 @app.after_request
-def after_request(response):
+def add_cors_headers(response):
+    # Required headers for preflight and regular requests
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 
+                        'Content-Type, Authorization, X-Requested-With')
+    response.headers.add('Access-Control-Allow-Methods', 
+                        'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Expose-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Max-Age', '86400')
     return response
 
-genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
+# Explicit OPTIONS handler for preflight requests with JSON content type
+@app.route('/get_recommendations', methods=['OPTIONS'])
+@app.route('/generate-cv', methods=['OPTIONS'])
+@app.route('/download-cv/<filename>', methods=['OPTIONS'])
+@app.route('/interview-questions', methods=['OPTIONS'])
+@app.route('/career_guidance', methods=['OPTIONS'])
+def options_handler():
+    return jsonify({}), 200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+        'Content-Type': 'application/json'
+    }
 
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 # Function to interact with Gemini API
 def get_gemini_response(prompt):
     model = genai.GenerativeModel('gemini-1.5-flash')
