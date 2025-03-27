@@ -346,7 +346,7 @@ def get_interview_questions():
         response.headers.add("Access-Control-Allow-Credentials", "true")  # If using cookies
         return response
     
-
+    print("Working")
     data = request.json
     role = data.get('role', '').strip()
 
