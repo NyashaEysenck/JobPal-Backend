@@ -337,16 +337,7 @@ cleanup_cv_files()
 
 @app.route('/interview-questions', methods=['POST', 'OPTIONS'])
 def get_interview_questions():
-    if request.method == 'OPTIONS':
-        # Respond to preflight
-        response = jsonify()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.headers.add("Access-Control-Allow-Credentials", "true")  # If using cookies
-        return response
-    
-    print("Working")
+ 
     data = request.json
     role = data.get('role', '').strip()
 
