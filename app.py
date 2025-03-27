@@ -20,6 +20,19 @@ app = Flask(__name__)
 # Alternatively, you can specify which origins are allowed:
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+@app.after_request
+def after_request(response):
+    # Allow requests from specific origin
+    response.headers.add('Access-Control-Allow-Origin', 'https://jobpal-frontend-production.up.railway.app/')
+    
+    # Allow specific methods (GET, POST, OPTIONS, etc.)
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    
+    # Allow specific headers (e.g., Content-Type, Authorization)
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    
+    # Allow cookies (if needed)
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
 
 # Configure Gemini API
   # Replace with your actual API key
