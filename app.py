@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os, re
 from io import StringIO
 
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS, cross_origin # Import CORS
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -324,6 +324,7 @@ cleanup_cv_files()
 
 
 @app.route('/interview-questions', methods=['POST'])
+@cross_origin
 def get_interview_questions():
     data = request.json
     role = data.get('role', '').strip()
