@@ -14,47 +14,59 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
+# List of allowed origins (add more if needed)
+allowed_origins = [
+    "https://jobpal-frontend-production.up.railway.app",
+    "http://localhost:3000"  # For local development
+]
 
-# Configure CORS with explicit settings for JSON content
-cors = CORS(app, resources={
-    r"/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-        "expose_headers": ["Content-Type"],
-        "supports_credentials": True,
-        "max_age": 86400
+# Configure CORS for all endpoints
+CORS(app, resources={
+    r"/get_recommendations": {
+        "origins": allowed_origins,
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/generate-cv": {
+        "origins": allowed_origins,
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/download-cv/<filename>": {
+        "origins": allowed_origins,
+        "methods": ["GET", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/interview-questions": {
+        "origins": allowed_origins,
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/career_guidance": {
+        "origins": allowed_origins,
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/health": {
+        "origins": allowed_origins,
+        "methods": ["GET", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
     }
 })
 
-# Add CORS headers to all responses
-@app.after_request
-def add_cors_headers(response):
-    # Required headers for preflight and regular requests
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 
-                        'Content-Type, Authorization, X-Requested-With')
-    response.headers.add('Access-Control-Allow-Methods', 
-                        'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.add('Access-Control-Expose-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Access-Control-Max-Age', '86400')
-    return response
-
-# Explicit OPTIONS handler for preflight requests with JSON content type
+# Explicit OPTIONS handlers for all endpoints
 @app.route('/get_recommendations', methods=['OPTIONS'])
 @app.route('/generate-cv', methods=['OPTIONS'])
 @app.route('/download-cv/<filename>', methods=['OPTIONS'])
 @app.route('/interview-questions', methods=['OPTIONS'])
 @app.route('/career_guidance', methods=['OPTIONS'])
-def options_handler():
-    return jsonify({}), 200, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
-        'Content-Type': 'application/json'
-    }
+@app.route('/health', methods=['OPTIONS'])
+def handle_options():
+    response = jsonify({'message': 'Preflight request accepted'})
+    response.headers.add('Access-Control-Allow-Origin', ', '.join(allowed_origins))
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response
 
 genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 # Function to interact with Gemini API
