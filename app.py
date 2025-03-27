@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file ,jsonify
+from flask import Flask, render_template, request, send_file ,jsonify, send_from_directory
 import google.generativeai as genai
 import json
 from reportlab.lib.pagesizes import letter
@@ -7,6 +7,12 @@ from io import BytesIO
 from dotenv import load_dotenv
 import os, re
 from io import StringIO
+import uuid
+from fpdf import FPDF
+from datetime import datetime
+import shutil
+from threading import Timer
+
 
 from flask_cors import CORS, cross_origin # Import CORS
 
@@ -23,7 +29,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 @app.after_request
 def after_request(response):
     # Allow requests from specific origin
-    response.headers.add('Access-Control-Allow-Origin', 'https://jobpal-frontend-production.up.railway.app/')
+    response.headers.add('Access-Control-Allow-Origin', '*')
     
     # Allow specific methods (GET, POST, OPTIONS, etc.)
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -93,14 +99,6 @@ def get_recommendations():
         print("JSON parsing error:", e)  # Debugging: Show decoding errors
         return jsonify([])  # Return empty list if parsing fails
 
- 
-import os
-import uuid
-from flask import Flask, request, jsonify, send_from_directory
-from fpdf import FPDF
-from datetime import datetime
-import shutil
-from threading import Timer
 
 
 
