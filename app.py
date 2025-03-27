@@ -16,7 +16,9 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 
- 
+# Enable CORS for all domains (or specify the frontend URL)
+# Alternatively, you can specify which origins are allowed:
+CORS(app)
 
 # Configure Gemini API
   # Replace with your actual API key
