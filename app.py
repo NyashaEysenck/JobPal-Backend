@@ -16,12 +16,26 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 
-# Enable CORS for all domains (or specify the frontend URL)
-# Alternatively, you can specify which origins are allowed:
-CORS(app)
 
-# Configure Gemini API
-  # Replace with your actual API key
+
+# Configure CORS
+CORS(app, resources={
+    r"/get_recommendations": {"origins": "*"},
+    r"/generate-cv": {"origins": "*"},
+    r"/download-cv/*": {"origins": "*"},
+    r"/interview-questions": {"origins": "*"},
+    r"/career_guidance": {"origins": "*"},
+    r"/health": {"origins": "*"}
+})
+
+# Add CORS headers to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
 # Function to interact with Gemini API
