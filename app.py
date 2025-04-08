@@ -553,6 +553,110 @@ def career_guidance():
         print("JSON parsing error:", e)  # Debugging: Show error
         return jsonify({"error": "Error parsing career guidance."})
 
+def format_education_for_prompt(education):
+    """Format education data for the AI prompt"""
+    if not education:
+        return "No formal education provided."
+    
+    formatted = []
+    for edu in education:
+        if all(edu.get(field, '').strip() for field in ['institution', 'degree']):
+            entry = f"- {edu.get('degree')} from {edu.get('institution')}"
+            if edu.get('year', '').strip():
+                entry += f", {edu.get('year')}"
+            if edu.get('description', '').strip():
+                entry += f". {edu.get('description')}"
+            formatted.append(entry)
+    
+    return "\n".join(formatted) if formatted else "No formal education provided."
+
+def format_experience_for_prompt(experience):
+    """Format work experience data for the AI prompt"""
+    if not experience:
+        return "No work experience provided."
+    
+    formatted = []
+    for exp in experience:
+        if all(exp.get(field, '').strip() for field in ['company', 'position']):
+            entry = f"- {exp.get('position')} at {exp.get('company')}"
+            
+            date_info = []
+            if exp.get('startDate', '').strip():
+                date_info.append(exp.get('startDate'))
+            if exp.get('endDate', '').strip():
+                date_info.append(exp.get('endDate'))
+            
+            if date_info:
+                entry += f", {' to '.join(date_info)}"
+                
+            if exp.get('description', '').strip():
+                entry += f". {exp.get('description')}"
+                
+            formatted.append(entry)
+    
+    return "\n".join(formatted) if formatted else "No work experience provided."
+
+@app.route('/generate-summary', methods=['POST', 'OPTIONS'])
+def generate_summary():
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+        
+    try:
+        data = request.json
+        
+        # Extract relevant information from the request
+        education = data.get('education', [])
+        experience = data.get('experience', [])
+        skills = data.get('skills', [])
+        
+        # Format the data for the prompt
+        formatted_education = format_education_for_prompt(education)
+        formatted_experience = format_experience_for_prompt(experience)
+        formatted_skills = ", ".join([skill for skill in skills if skill.strip()])
+        
+        if not formatted_skills:
+            formatted_skills = "No skills provided."
+        
+        # Construct the prompt for the AI
+        prompt = f"""
+        Generate a professional summary for a CV/resume based on the following information:
+        
+        EDUCATION:
+        {formatted_education}
+        
+        WORK EXPERIENCE:
+        {formatted_experience}
+        
+        SKILLS:
+        {formatted_skills}
+        
+        Create a concise, professional summary paragraph (3-5 sentences) that highlights the candidate's background, 
+        key qualifications, and career goals based on the provided information. The tone should be professional and confident.
+        Do not use phrases like "based on the provided information" or refer to the prompt in any way.
+        Only return the summary paragraph with no additional text, explanations, or formatting.
+        """
+        
+        # Generate the summary using the existing function
+        summary = get_gemini_response(prompt)
+        
+        # Return the generated summary
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })
+        
+    except Exception as e:
+        print(f"Error generating summary: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0",     port=int(os.environ.get("PORT", 5000)), debug=False)
     # Start the cleanup scheduler
