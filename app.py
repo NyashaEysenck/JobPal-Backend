@@ -324,7 +324,7 @@ cleanup_cv_files()
 
 @app.route('/interview-questions', methods=['POST', 'OPTIONS'])
 def get_interview_questions():
-    print("Entered")
+    print("Entered interview-questions endpoint")
     if request.method == 'OPTIONS':
         # Handle preflight request
         response = jsonify({'status': 'preflight accepted'})
@@ -341,62 +341,170 @@ def get_interview_questions():
         return jsonify({"error": "Role is required."}), 400
 
     try:
-        # Generate a strict prompt for Gemini
+        # Generate a prompt for Gemini that's clear but not overly restrictive
         prompt = f"""
         Generate a list of 10 common interview questions for the role of {role}. 
-        For each question, provide 4 tips on how to answer it. 
-        Format the response strictly as follows:
+        For each question, provide 3-5 tips on how to answer it effectively.
+        Format the response as follows:
 
-        1. Question 1
-           - Tips: Tip 1, Tip 2, Tip 3, Tip 4
+        1. [Question text]
+           - Tips: [Tip 1], [Tip 2], [Tip 3], etc.
 
-        2. Question 2
-           - Tips: Tip 1, Tip 2, Tip 3, Tip 4
+        2. [Question text]
+           - Tips: [Tip 1], [Tip 2], [Tip 3], etc.
 
-        ...
+        ...and so on.
 
-        10. Question 10
-            - Tips: Tip 1, Tip 2, Tip 3, Tip 4
-
-        Ensure the following:
-        - Each question is numbered from 1 to 10.
-        - Each question is followed by a line starting with "- Tips:".
-        - There are exactly 4 tips for each question, separated by commas.
-        - Do not include any additional text, explanations, or numbering beyond the list of questions and tips.
+        Make sure each question is clearly numbered and each set of tips is on a separate line starting with "- Tips:".
         """
         
         # Get the response from Gemini
         gemini_response = get_gemini_response(prompt)
+        print(f"Raw Gemini response received: {gemini_response[:100]}...")  # Log first 100 chars
         
-        # Validate and parse the response
+        # More robust parsing logic
         questions_with_tips = []
-        lines = gemini_response.split("\n")
+        lines = gemini_response.strip().split("\n")
         current_question = None
+        question_pattern = re.compile(r"^\s*(\d+)[\.\)]?\s+(.+)")
+        tips_pattern = re.compile(r"^\s*[-•*]?\s*(?:Tips|tips|TIPS)?:?\s*(.+)")
 
-        for line in lines:
-            line = line.strip()
-            # Check if the line is a question (e.g., "1. Question 1")
-            if re.match(r"^\d+\.\s+.+", line):
-                if current_question:
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line:  # Skip empty lines
+                i += 1
+                continue
+                
+            # Check for question pattern (number followed by text)
+            question_match = question_pattern.match(line)
+            if question_match:
+                # Save previous question if exists
+                if current_question and current_question.get("question") and current_question.get("tips"):
                     questions_with_tips.append(current_question)
-                current_question = {"question": line.split(". ", 1)[1], "tips": []}
-            # Check if the line contains tips (e.g., "- Tips: Tip 1, Tip 2, Tip 3, Tip 4")
-            elif line.startswith("- Tips:"):
-                tips = [tip.strip() for tip in line.split(": ", 1)[1].split(", ")]
-                if len(tips) != 4:
-                    raise ValueError(f"Expected 4 tips, but got {len(tips)} for question: {current_question['question']}")
-                current_question["tips"] = tips
+                
+                # Extract question text, removing any numbering
+                question_text = question_match.group(2).strip()
+                current_question = {"question": question_text, "tips": []}
+                i += 1
+                continue
+            
+            # Check for tips pattern
+            tips_match = tips_pattern.match(line)
+            if tips_match and current_question:
+                # Extract tips text
+                tips_text = tips_match.group(1).strip()
+                
+                # Try different delimiters for tips
+                for delimiter in [", ", "; ", "\n- ", " • "]:
+                    if delimiter in tips_text:
+                        tips = [tip.strip() for tip in tips_text.split(delimiter) if tip.strip()]
+                        if tips:
+                            current_question["tips"] = tips
+                            break
+                
+                # If no delimiter worked, treat as a single tip
+                if not current_question["tips"] and tips_text:
+                    current_question["tips"] = [tips_text]
+                    
+                # Look ahead for additional tips on subsequent lines
+                j = i + 1
+                while j < len(lines) and not question_pattern.match(lines[j].strip()):
+                    next_line = lines[j].strip()
+                    if next_line and not next_line.lower().startswith("tips:"):
+                        # Check if this might be a continuation of tips
+                        if next_line.startswith("-") or next_line.startswith("•"):
+                            tip = next_line.lstrip("-•").strip()
+                            if tip:
+                                current_question["tips"].append(tip)
+                    j += 1
+                
+                i = j
+                continue
+            
+            # If we're here, the line didn't match our patterns
+            # Check if it might be a tip without the "Tips:" prefix
+            if current_question and line.startswith("-") or line.startswith("•"):
+                tip = line.lstrip("-•").strip()
+                if tip:
+                    current_question["tips"].append(tip)
+            
+            i += 1
 
-        if current_question:
+        # Add the last question if it exists
+        if current_question and current_question.get("question") and current_question.get("tips"):
             questions_with_tips.append(current_question)
 
-        # Validate that we have exactly 10 questions
-        if len(questions_with_tips) != 10:
-            raise ValueError(f"Expected 10 questions, but got {len(questions_with_tips)}")
+        # Handle case where we couldn't parse any questions
+        if not questions_with_tips:
+            print("Failed to parse questions from response, attempting fallback parsing")
+            
+            # Fallback: Try to extract questions and tips with minimal structure
+            paragraphs = gemini_response.split("\n\n")
+            for paragraph in paragraphs:
+                lines = paragraph.strip().split("\n")
+                if not lines:
+                    continue
+                    
+                # First line might be a question
+                potential_question = lines[0].strip()
+                if re.search(r"^\d+[\.\)]|question|interview", potential_question.lower()):
+                    # Clean up the question text
+                    question_text = re.sub(r"^\d+[\.\)]?\s*", "", potential_question)
+                    
+                    # Look for tips in remaining lines
+                    tips = []
+                    for line in lines[1:]:
+                        line = line.strip()
+                        if line and not line.lower().startswith(("question", "interview")):
+                            # Clean up the tip text
+                            tip = re.sub(r"^[-•*]?\s*", "", line)
+                            if tip:
+                                tips.append(tip)
+                    
+                    if question_text and tips:
+                        questions_with_tips.append({
+                            "question": question_text,
+                            "tips": tips
+                        })
 
+        # Ensure we have at least some questions
+        if not questions_with_tips:
+            print("WARNING: Could not parse any questions from the response")
+            # Create a minimal valid response with an explanation
+            questions_with_tips = [{
+                "question": f"Common interview question for {role}",
+                "tips": [
+                    "Prepare specific examples from your experience",
+                    "Research the company before the interview",
+                    "Practice your answers out loud",
+                    "Follow up with thoughtful questions for the interviewer"
+                ]
+            }]
+
+        # Limit to 10 questions maximum
+        questions_with_tips = questions_with_tips[:10]
+        
+        # Ensure each question has at least some tips
+        for q in questions_with_tips:
+            if not q["tips"]:
+                q["tips"] = [
+                    "Prepare specific examples",
+                    "Be concise and clear in your response",
+                    "Highlight relevant skills and experience"
+                ]
+            # Limit to 5 tips maximum per question
+            q["tips"] = q["tips"][:5]
+
+        print(f"Successfully parsed {len(questions_with_tips)} questions")
         return jsonify({"questions": questions_with_tips})
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        print(f"Error in get_interview_questions: {str(e)}")
+        # Return a more user-friendly error message
+        return jsonify({
+            "error": "We couldn't generate interview questions at this time. Please try again later.",
+            "questions": []  # Include an empty questions array for the frontend to handle gracefully
+        }), 500
 
 @app.route('/career_guidance', methods=['POST'])
 def career_guidance():
@@ -449,5 +557,3 @@ if __name__ == '__main__':
     app.run(host="0.0.0.0",     port=int(os.environ.get("PORT", 5000)), debug=False)
     # Start the cleanup scheduler
     cleanup_cv_files()
-    
-    
