@@ -179,30 +179,35 @@ def generate_cv_pdf(data, filename):
         pdf.ln(5)
     
     # Work Experience Section
-    pdf.set_font("Arial", 'B', 16)
-    pdf.set_text_color(*pdf.primary_color)
-    pdf.cell(0, 10, txt="WORK EXPERIENCE", ln=1)
-    pdf.set_line_width(0.5)
-    pdf.line(10, pdf.get_y(), pdf.w - 10, pdf.get_y())
-    pdf.ln(8)
-    
-    for exp in data['experience']:
-        pdf.set_font("Arial", 'B', 12)
-        pdf.set_text_color(0, 0, 0)
-        pdf.cell(0, 7, txt=exp['company'], ln=1)
+    if data['experience'] and any(exp.get('company', '').strip() for exp in data['experience']):
+        pdf.set_font("Arial", 'B', 16)
+        pdf.set_text_color(*pdf.primary_color)
+        pdf.cell(0, 10, txt="WORK EXPERIENCE", ln=1)
+        pdf.set_line_width(0.5)
+        pdf.line(10, pdf.get_y(), pdf.w - 10, pdf.get_y())
+        pdf.ln(8)
         
-        pdf.set_font("Arial", size=11)
-        pdf.set_text_color(*pdf.secondary_color)
-        date_range = f"{exp['startDate']} - {exp['endDate'] or 'Present'}"
-        pdf.cell(0, 6, txt=f"{exp['position']} | {date_range}", ln=1)
-        
-        if exp['description']:
+        for exp in data['experience']:
+            # Skip empty experience entries
+            if not exp.get('company', '').strip():
+                continue
+                
+            pdf.set_font("Arial", 'B', 12)
             pdf.set_text_color(0, 0, 0)
-            pdf.set_font("Arial", size=10)
-            pdf.multi_cell(0, 5, txt=exp['description'])
+            pdf.cell(0, 7, txt=exp['company'], ln=1)
+            
             pdf.set_font("Arial", size=11)
-        
-        pdf.ln(5)
+            pdf.set_text_color(*pdf.secondary_color)
+            date_range = f"{exp['startDate']} - {exp['endDate'] or 'Present'}"
+            pdf.cell(0, 6, txt=f"{exp['position']} | {date_range}", ln=1)
+            
+            if exp.get('description'):
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Arial", size=10)
+                pdf.multi_cell(0, 5, txt=exp['description'])
+                pdf.set_font("Arial", size=11)
+            
+            pdf.ln(5)
     
     # Skills Section
     pdf.set_font("Arial", 'B', 16)
