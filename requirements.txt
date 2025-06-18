@@ -8,3 +8,4 @@ reportlab
 google-generativeai
 waitress
 gunicorn
+gevent
