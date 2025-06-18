@@ -1,7 +1,7 @@
 Flask
 flask-cors
 Flask_Cors
-fpdf
+fpdf2
 protobuf
 python-dotenv
 reportlab
