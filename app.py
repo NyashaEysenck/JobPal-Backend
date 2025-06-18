@@ -76,6 +76,5 @@ def create_app():
 # Entry point for running the Flask application
 if __name__ == '__main__':
     app = create_app()
-    # In a production deployment, use a production-ready WSGI server
-    # like Gunicorn or uWSGI instead of app.run().
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))  # Heroku sets PORT environment variable
+    app.run(host='0.0.0.0', port=port)  # Remove debug=True for production
