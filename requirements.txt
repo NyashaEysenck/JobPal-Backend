@@ -1,6 +1,5 @@
 Flask
 flask-cors
-Flask_Cors
 fpdf2
 protobuf
 python-dotenv
